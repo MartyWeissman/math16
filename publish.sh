@@ -43,10 +43,14 @@ missing=$(grep -o 'href="[^"#]*' index.html | sed 's/href="//; s/%20/ /g' | grep
 
 # 5. Commit + push
 git add -A
-if git diff --cached --quiet; then echo "Nothing changed since the last publish."; exit 0; fi
-echo "Changes:"; git diff --cached --stat | tail -n 25
-git commit -q -m "Publish $(date '+%Y-%m-%d %H:%M')"
-[ "${1:-}" = "--no-push" ] && { echo "Committed (not pushed)."; exit 0; }
+if git diff --cached --quiet; then
+  echo "No file changes since the last commit."
+else
+  echo "Changes:"; git diff --cached --stat | tail -n 25
+  git commit -q -m "Publish $(date '+%Y-%m-%d %H:%M')"
+fi
+[ "${1:-}" = "--no-push" ] && { echo "Stopping before push."; exit 0; }
+# Push whatever is not yet on GitHub (a no-op if everything already is)
 if [ -r .github-token ]; then
   git -c credential.helper= -c credential.helper='!f() { echo username=token; echo "password=$(cat .github-token)"; }; f' push -q origin HEAD:main
 else
